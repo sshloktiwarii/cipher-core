@@ -4,6 +4,8 @@ Five-node autonomous self-healing state machine for local AI environments.
 
 Written in pure Go. Continuously evaluates telemetry signals, retrieves contextual runbooks, synthesizes minimal patches, verifies them in the execution sandbox, and commits validated fixes.
 
+Looking for a plain-English, non-technical summary? See [EXPLAINER.md](EXPLAINER.md).
+
 ---
 
 ## The 5-Node Pipeline
