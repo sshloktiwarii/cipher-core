@@ -34,5 +34,7 @@ class OrchestratorState(BaseModel):
 
     def log(self, message: str) -> None:
         timestamp = time.strftime("%H:%M:%S")
+        if len(self.logs) >= 500:
+            self.logs.pop(0)
         self.logs.append(f"[{timestamp}] {message}")
         self.updated_at = time.time()
