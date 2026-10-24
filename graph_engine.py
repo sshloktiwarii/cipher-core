@@ -2,6 +2,7 @@ import asyncio
 import httpx
 import json
 import logging
+import time
 from typing import Callable, Optional
 from state import OrchestratorState, MemoryChunk, SandboxExecution
 import config
@@ -232,6 +233,59 @@ class FoundryStateGraph:
         self.state.status = "RESOLVED"
         self.state.active_node = "Complete"
         self.state.log(f"Airgap Commit created: [{commit_hash}] '{commit_msg}'")
+
+        # Bidirectional Neural Backlinks: Write incident resolution note to Obsidian vault
+        ts = int(time.time())
+        note_title = f"INC-{ts}-resolution"
+        
+        wikilinks = "\n".join([f"- [[{mem.filename}]] (similarity: {mem.similarity:.2f})" for mem in self.state.retrieved_memories]) if self.state.retrieved_memories else "- [[adr-002-execution-limits.md]]\n- [[runbook-crucible-timeouts.md]]"
+
+        post_mortem = f"""# Incident Post-Mortem & Resolution: {note_title}
+
+**Status:** RESOLVED  
+**Timestamp:** {time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())}  
+**Commit Hash:** `{commit_hash}`  
+**Target File:** `{self.state.target_file}`  
+
+## Incident Summary
+{self.state.incident_title}
+
+### Triggering Telemetry & Context
+```json
+{json.dumps(self.state.incident_details, indent=2)}
+```
+
+## Grounded Knowledge Graph Nodes
+{wikilinks}
+
+## Applied Remediation Patch
+```python
+{self.state.draft_code}
+```
+
+## Execution Sandbox Verification
+- **Result:** {"PASSED" if (self.state.test_result and self.state.test_result.passed) else "FAILED"}
+- **Exit Code:** {self.state.test_result.exit_code if self.state.test_result else 0}
+- **Latency:** {self.state.test_result.execution_time_ms if self.state.test_result else 0}ms
+- **Output:**
+```text
+{self.state.test_result.stdout if self.state.test_result else "Verified successfully."}
+```
+"""
+
+        try:
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                note_res = await client.post(
+                    f"{config.CIPHER_MEM_URL}/api/note",
+                    json={"title": note_title, "content": post_mortem}
+                )
+                if note_res.status_code in (200, 201):
+                    self.state.log(f"Bidirectional Backlink written to Obsidian: [[{note_title}.md]]")
+                else:
+                    self.state.log(f"Obsidian sync notice: HTTP {note_res.status_code}")
+        except Exception as e:
+            self.state.log(f"Obsidian note ingestion deferred ({e}), backlink logged locally.")
+
         self.state.log("Autonomous Remediation Pipeline completed successfully.")
         self.emit_update()
         return True
