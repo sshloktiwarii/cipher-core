@@ -14,7 +14,11 @@ dist/
 *.egg-info/
 *.spec
 
+cipher-core
+*.exe
+*.test
 # Environment & OS
 .env
 .env.*
 .DS_Store
+
