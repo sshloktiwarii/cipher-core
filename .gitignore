@@ -12,6 +12,7 @@ env/
 build/
 dist/
 *.egg-info/
+*.spec
 
 # Environment & OS
 .env
