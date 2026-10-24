@@ -238,7 +238,7 @@ class FoundryStateGraph:
         ts = int(time.time())
         note_title = f"INC-{ts}-resolution"
         
-        wikilinks = "\n".join([f"- [[{mem.filename}]] (similarity: {mem.similarity:.2f})" for mem in self.state.retrieved_memories]) if self.state.retrieved_memories else "- [[adr-002-execution-limits.md]]\n- [[runbook-crucible-timeouts.md]]"
+        wikilinks = "\n".join([f"- [[{mem.file}]] (similarity: {mem.similarity:.2f})" for mem in self.state.retrieved_context]) if self.state.retrieved_context else "- [[adr-002-execution-limits.md]]\n- [[runbook-crucible-timeouts.md]]"
 
         post_mortem = f"""# Incident Post-Mortem & Resolution: {note_title}
 
@@ -260,7 +260,7 @@ class FoundryStateGraph:
 
 ## Applied Remediation Patch
 ```python
-{self.state.draft_code}
+{self.state.drafted_fix}
 ```
 
 ## Execution Sandbox Verification
